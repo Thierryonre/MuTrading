@@ -65,9 +65,18 @@ index 35b53472..6327e06b 100644
  
  
 diff --git a/lzero/policy/gumbel_muzero.py b/lzero/policy/gumbel_muzero.py
-index 74ec7227..cec87d14 100644
+index 74ec7227..3b2e370e 100644
 --- a/lzero/policy/gumbel_muzero.py
 +++ b/lzero/policy/gumbel_muzero.py
+@@ -559,7 +559,7 @@ class GumbelMuZeroPolicy(MuZeroPolicy):
+                 # python mcts_tree
+                 roots = MCTSPtree.roots(active_collect_env_num, legal_actions)
+ 
+-            roots.prepare(self._cfg.root_noise_weight, noises, reward_roots, list(pred_values), policy_logits, to_play)
++            roots.prepare(self._cfg.root_noise_weight, noises, reward_roots, list(np.asarray(pred_values).reshape(-1)), policy_logits, to_play)  # [rltrading patch] NumPy 2 scalar conversion
+             self._mcts_collect.search(roots, self._collect_model, latent_state_roots, to_play)
+ 
+             # list of list, shape: ``{list: batch_size} -> {list: action_space_size}``
 @@ -662,7 +662,7 @@ class GumbelMuZeroPolicy(MuZeroPolicy):
              else:
                  # python mcts_tree

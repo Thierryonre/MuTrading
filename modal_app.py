@@ -103,6 +103,7 @@ _CACHE = _os.path.expanduser("~/rlt/modal_data")
 train_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("build-essential", "git")
+    .pip_install("numpy==1.26.4")  # match local env (NumPy 2 breaks some LightZero ctree calls)
     .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
     .pip_install("DI-engine @ git+https://github.com/opendilab/DI-engine.git@ce54f6baa8d39d5b98adaf9a7e82560a444a2b1a")
     .add_local_dir(_LZ_DIR, "/opt/LightZero", copy=True,

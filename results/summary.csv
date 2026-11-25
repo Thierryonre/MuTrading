@@ -1,0 +1,8 @@
+run,algo,sentiment,seed,steps,ckpt,val_sharpe,test_sharpe,test_cagr,test_maxdd,test_turnover,test_avg_pos,test_mean_asset_sharpe,train_hours
+efficientzero_finbert_seed0,efficientzero,finbert,0,120000,iteration_30208.pth.tar,0.5957,-0.0866,-0.0188,-0.1857,28.4477,0.2252,-0.0416,1.1627
+efficientzero_none_seed0,efficientzero,none,0,120000,iteration_28000.pth.tar,0.4667,0.3425,0.0393,-0.2298,37.1579,0.2404,0.1245,1.1203
+muzero_finbert_seed0,muzero,finbert,0,150000,iteration_22000.pth.tar,0.1898,-0.0727,-0.0071,-0.1339,31.0962,0.2014,-0.0534,2.6374
+muzero_none_seed0,muzero,none,0,150000,iteration_4000.pth.tar,0.6759,-0.2497,-0.0335,-0.2680,40.3314,0.4422,-0.1122,2.6374
+muzero_none_smoke2_seed0,muzero,none,0,3000,iteration_0.pth.tar,-0.5832,-0.4302,-0.0950,-0.4774,24.6121,-0.8943,-0.2885,0.0338
+ppo_finbert_seed0,ppo,finbert,0,1000000,eval5,1.7925,0.4309,0.0560,-0.1715,75.5144,0.3991,0.2653,0.0000
+ppo_none_seed0,ppo,none,0,1000000,eval1,0.2141,0.1589,0.0124,-0.2499,67.7632,0.4546,0.1344,0.0000
