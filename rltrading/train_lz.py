@@ -47,7 +47,7 @@ def build_cfg(a):
         update_per_collect=None,
         learn=dict(learner=dict(hook=dict(save_ckpt_after_iter=a.ckpt_every))),
     )
-    if a.algo in ("muzero", "gumbel_muzero", "stochastic_muzero", "efficientzero"):
+    if a.algo != "unizero":
         # default SSL projection head (1024 wide) dominated CPU training time; shrink it ~4x
         model.update(proj_hid=256, proj_out=256, pred_hid=128, pred_out=256)
     if a.algo == "stochastic_muzero":
@@ -118,19 +118,25 @@ def main(argv=None):
     torch.set_num_threads(a.threads)
     main_cfg, create_cfg = build_cfg(a)
     t0 = time.time()
-    os.makedirs(main_cfg.exp_name, exist_ok=True)
-    with open(os.path.join(main_cfg.exp_name, "run_args.json"), "w") as f:
-        json.dump({**vars(a), "wall_sec": None}, f, indent=1)  # rewritten at the end
+    # NB: do not create exp dir before training - LightZero appends a timestamp if it already exists
     if a.algo == "unizero":
         from lzero.entry import train_unizero
         train_unizero([main_cfg, create_cfg], seed=a.seed, max_env_step=a.max_env_step)
     else:
         from lzero.entry import train_muzero
         train_muzero([main_cfg, create_cfg], seed=a.seed, max_env_step=a.max_env_step)
-    os.makedirs(main_cfg.exp_name, exist_ok=True)
-    with open(os.path.join(main_cfg.exp_name, "run_args.json"), "w") as f:
+    exp_dir = find_exp_dir(main_cfg.exp_name)
+    with open(os.path.join(exp_dir, "run_args.json"), "w") as f:
         json.dump({**vars(a), "wall_sec": time.time() - t0}, f, indent=1)
-    print("DONE", main_cfg.exp_name, f"{time.time() - t0:.0f}s")
+    print("DONE", exp_dir, f"{time.time() - t0:.0f}s")
+    return exp_dir
+
+
+def find_exp_dir(exp_name):
+    """LightZero may add a _<timestamp> suffix; return the newest matching dir that has checkpoints."""
+    import glob
+    cands = [d for d in glob.glob(exp_name.rstrip("/") + "*") if os.path.isdir(os.path.join(d, "ckpt"))]
+    return max(cands, key=os.path.getmtime) if cands else exp_name
 
 
 if __name__ == "__main__":

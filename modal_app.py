@@ -127,11 +127,18 @@ def train_eval(argv: list[str]) -> dict:
     os.chdir("/vol/rlt")
     from rltrading import backtest, train_lz
     from rltrading import config as C
-    a = train_lz.parse(argv)
-    main_cfg, _ = train_lz.build_cfg(a)
-    train_lz.main(argv + ["--threads", "4"])
+    exp_dir = train_lz.main(argv + ["--threads", "4"])
     exp_vol.commit()
-    summary = backtest.evaluate_exp(main_cfg.exp_name.lstrip("./"))
+    return _evaluate(exp_dir)
+
+
+def _evaluate(exp_dir):
+    import glob
+    import os
+
+    from rltrading import backtest
+    from rltrading import config as C
+    summary = backtest.evaluate_exp(exp_dir)
     out_dir = C.RESULTS_DIR / "runs" / summary["name"]
     files = {os.path.relpath(p, C.RESULTS_DIR): open(p, "rb").read()
              for p in glob.glob(str(out_dir / "*"))}
@@ -141,6 +148,18 @@ def train_eval(argv: list[str]) -> dict:
         open(dest, "wb").write(b)
     exp_vol.commit()
     return files
+
+
+@app.function(image=train_image, cpu=2.0, memory=4096, timeout=2 * 3600, volumes={"/vol": exp_vol},
+              max_containers=6)
+def eval_only(exp_dir: str, run_args: dict | None = None) -> dict:
+    """Backtest an already-trained experiment on the volume (exp_dir relative to /vol/rlt)."""
+    import json
+    import os
+    os.chdir("/vol/rlt")
+    if run_args is not None:
+        json.dump(run_args, open(os.path.join(exp_dir, "run_args.json"), "w"))
+    return _evaluate(exp_dir)
 
 
 @app.local_entrypoint()
@@ -162,3 +181,45 @@ def sweep(spec: str = "", seeds: str = "0", common: str = ""):
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(b)
             print("saved", p)
+
+
+@app.local_entrypoint()
+def recover(only: str):
+    """Backtest trained runs on the volume that have checkpoints but no results yet
+    (e.g. after a crash in the evaluation step). `only`: comma list of exact exp dir names
+    (with LightZero timestamp suffix) - never pass runs that are still training."""
+    import json
+    import re
+    from pathlib import Path
+    names = [e.path.split("/")[-1] for e in exp_vol.listdir("rlt/exp")]
+    done = {e.path.split("/")[-1] for e in exp_vol.listdir("results/runs")} if _vol_has("results/runs") else set()
+    jobs = []
+    for n in names:
+        base = re.sub(r"_\d{6}_\d{6}$", "", n)
+        if n not in only.split(",") or base in done:
+            continue
+        try:
+            args = json.loads(b"".join(exp_vol.read_file(f"rlt/exp/{base}/run_args.json")))
+        except Exception:
+            print("no run_args for", n)
+            continue
+        jobs.append((f"exp/{n}", args))
+    print("recovering", [j[0] for j in jobs])
+    res_dir = Path(__file__).parent / "results"
+    for files in eval_only.starmap(jobs, return_exceptions=True):
+        if isinstance(files, Exception):
+            print("FAILED:", repr(files)[:2000])
+            continue
+        for rel, b in files.items():
+            p = res_dir / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b)
+            print("saved", p)
+
+
+def _vol_has(path):
+    try:
+        exp_vol.listdir(path)
+        return True
+    except Exception:
+        return False

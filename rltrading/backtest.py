@@ -78,7 +78,7 @@ def load_policy(exp_dir, ckpt):
         main_cfg.policy.model.world_model_cfg.evaluator_env_num = 64
     main_cfg.exp_name = "/tmp/bt_" + os.path.basename(exp_dir)
     cfg = compile_config(main_cfg, seed=0, env=None, auto=True, create_cfg=create_cfg, save_cfg=False)
-    policy = create_policy(cfg.policy, model=None, enable_field=["learn", "eval"])
+    policy = create_policy(cfg.policy, model=None, enable_field=["learn", "collect", "eval"])
     sd = torch.load(ckpt, map_location="cpu", weights_only=False)
     policy.learn_mode.load_state_dict(sd)
     return policy, a, cfg
@@ -129,7 +129,7 @@ def evaluate_exp(exp_dir, max_ckpts=8):
     policy, a, cfg = load_policy(exp_dir, best[0])
     test = report(agent_frames(policy, a, cfg, "test"), os.path.basename(best[0]))
     val = report(agent_frames(policy, a, cfg, "val"), os.path.basename(best[0]))
-    name = os.path.basename(exp_dir.rstrip("/"))
+    name = re.sub(r"_\d{6}_\d{6}$", "", os.path.basename(exp_dir.rstrip("/")))  # drop LightZero timestamp suffix
     out_dir = C.RESULTS_DIR / "runs" / name
     out_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(val_rows).to_csv(out_dir / "val_curve.csv", index=False)
