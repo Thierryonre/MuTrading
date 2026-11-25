@@ -1,0 +1,36 @@
+diff --git a/lzero/mcts/buffer/game_buffer_muzero.py b/lzero/mcts/buffer/game_buffer_muzero.py
+index b37f411a..81ac93a8 100644
+--- a/lzero/mcts/buffer/game_buffer_muzero.py
++++ b/lzero/mcts/buffer/game_buffer_muzero.py
+@@ -535,6 +535,12 @@ class MuZeroGameBuffer(GameBuffer):
+             value_list = value_list * np.array(value_mask)
+             value_list = value_list.tolist()
+             value_index = 0
++            # [rltrading patch] hoist EasyDict attribute lookups out of the hot python loop (~2x faster on CPU)
++            _is_board = self._cfg.env_type == 'board_games' and to_play_segment[0][0] in [1, 2]
++            _gamma = self._cfg.discount_factor
++            _unroll = self._cfg.num_unroll_steps
++            _gpow = [_gamma ** i for i in range(int(max(td_steps_list)) + 1)]
++            _scalar_reward = self._scalar_reward
+ 
+             for game_segment_len_non_re, reward_list, state_index, to_play_list in zip(game_segment_lens, rewards_list,
+                                                                                        pos_in_game_segment_list,
+@@ -545,8 +551,17 @@ class MuZeroGameBuffer(GameBuffer):
+ 
+                 truncation_length = game_segment_len_non_re
+ 
+-                for current_index in range(state_index, state_index + self._cfg.num_unroll_steps + 1):
++                for current_index in range(state_index, state_index + _unroll + 1):
+                     bootstrap_index = current_index + td_steps_list[value_index]
++                    if not _is_board:
++                        acc = 0.
++                        for i, reward in enumerate(reward_list[current_index:bootstrap_index]):
++                            acc += reward * _gpow[i]
++                        value_list[value_index] += acc
++                        target_values.append(_scalar_reward(value_list[value_index]))
++                        target_rewards.append(_scalar_reward(reward_list[current_index]) if current_index < len(reward_list) else 0.)
++                        value_index += 1
++                        continue
+                     for i, reward in enumerate(reward_list[current_index:bootstrap_index]):
+                         if self._cfg.env_type == 'board_games' and to_play_segment[0][0] in [1, 2]:
+                             # TODO(pu): for board_games, very important, to check

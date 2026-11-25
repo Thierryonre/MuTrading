@@ -108,13 +108,14 @@ def parse(argv=None):
     p.add_argument("--env_manager", default="base", choices=["base", "subprocess"])
     p.add_argument("--exp_root", default="exp")  # LightZero prefixes "./": keep relative, run from ~/rlt
     p.add_argument("--tag", default="")
+    p.add_argument("--threads", type=int, default=3)
     return p.parse_args(argv)
 
 
 def main(argv=None):
     a = parse(argv)
     import torch
-    torch.set_num_threads(a.threads if hasattr(a, "threads") else max(1, os.cpu_count() // 2))
+    torch.set_num_threads(a.threads)
     main_cfg, create_cfg = build_cfg(a)
     t0 = time.time()
     if a.algo == "unizero":

@@ -91,3 +91,70 @@ def score_corpus(model: str = "finbert", chunk: int = 60000, limit: int = 0):
     probs.to_parquet(dest)
     print("saved", dest, len(probs))
     print(probs.describe())
+
+
+# ----------------------------------------------------------------------------- RL training on CPU
+import os as _os
+
+_LZ_DIR = _os.path.expanduser("~/rlt/LightZero")
+# only the small pre-built feature arrays are shipped (copied here by scripts/stage_modal_data.sh)
+_CACHE = _os.path.expanduser("~/rlt/modal_data")
+
+train_image = (
+    modal.Image.debian_slim(python_version="3.10")
+    .apt_install("build-essential", "git")
+    .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
+    .pip_install("DI-engine @ git+https://github.com/opendilab/DI-engine.git@ce54f6baa8d39d5b98adaf9a7e82560a444a2b1a")
+    .add_local_dir(_LZ_DIR, "/opt/LightZero", copy=True,
+                   ignore=[".git", "**/__pycache__", "**/*.so", "build", "*.egg-info"])
+    .run_commands("cd /opt/LightZero && pip install -e . && pip install pandas pyarrow tabulate")
+    .env({"RLT_DATA_DIR": "/data", "PYTHONUNBUFFERED": "1"})
+    .add_local_dir(_CACHE, "/data/cache")
+    .add_local_python_source("rltrading")
+)
+exp_vol = modal.Volume.from_name("rltrading-exp", create_if_missing=True)
+
+
+@app.function(image=train_image, cpu=4.0, memory=6144, timeout=6 * 3600, volumes={"/vol": exp_vol},
+              max_containers=6)
+def train_eval(argv: list[str]) -> dict:
+    """Train one agent (argv for rltrading.train_lz), select checkpoint on val, backtest on test.
+    Returns the small result files {relative_path: bytes}."""
+    import glob
+    import os
+
+    os.makedirs("/vol/rlt", exist_ok=True)
+    os.chdir("/vol/rlt")
+    from rltrading import backtest, train_lz
+    from rltrading import config as C
+    a = train_lz.parse(argv)
+    main_cfg, _ = train_lz.build_cfg(a)
+    train_lz.main(argv + ["--threads", "4"])
+    exp_vol.commit()
+    summary = backtest.evaluate_exp(main_cfg.exp_name.lstrip("./"))
+    out_dir = C.RESULTS_DIR / "runs" / summary["name"]
+    files = {os.path.relpath(p, C.RESULTS_DIR): open(p, "rb").read()
+             for p in glob.glob(str(out_dir / "*"))}
+    exp_vol.commit()
+    return files
+
+
+@app.local_entrypoint()
+def sweep(spec: str = "", seeds: str = "0", common: str = ""):
+    """spec: comma list of algo:sentiment, e.g. "muzero:none,stochastic_muzero:finbert"."""
+    from pathlib import Path
+    jobs = []
+    for item in spec.split(","):
+        algo, sent = item.split(":")
+        for s in seeds.split(","):
+            jobs.append(["--algo", algo, "--sentiment", sent, "--seed", s] + common.split())
+    res_dir = Path(__file__).parent / "results"
+    for files in train_eval.map(jobs, return_exceptions=True):
+        if isinstance(files, Exception):
+            print("FAILED:", repr(files)[:2000])
+            continue
+        for rel, b in files.items():
+            p = res_dir / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b)
+            print("saved", p)
