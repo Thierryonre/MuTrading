@@ -1,0 +1,11 @@
+# LightZero installed from source: https://github.com/opendilab/LightZero (pip install -e .)
+torch
+yfinance
+duckdb
+pyarrow
+pandas
+numpy
+matplotlib
+requests
+tabulate
+modal

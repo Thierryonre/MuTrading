@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+data/raw/
+data/cache/
+runs/
+exp/
+*.ckpt
+*.pth.tar
+*.log
+.ipynb_checkpoints/
+__pycache__/
