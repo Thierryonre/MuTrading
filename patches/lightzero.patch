@@ -34,3 +34,33 @@ index b37f411a..81ac93a8 100644
                      for i, reward in enumerate(reward_list[current_index:bootstrap_index]):
                          if self._cfg.env_type == 'board_games' and to_play_segment[0][0] in [1, 2]:
                              # TODO(pu): for board_games, very important, to check
+diff --git a/lzero/model/unizero_model.py b/lzero/model/unizero_model.py
+index 35b53472..6327e06b 100644
+--- a/lzero/model/unizero_model.py
++++ b/lzero/model/unizero_model.py
+@@ -89,13 +89,13 @@ class UniZeroModel(nn.Module):
+             self.representation_network = RepresentationNetworkMLP(
+                 observation_shape,
+                 hidden_channels=world_model_cfg.embed_dim,
+-                layer_num=2,
++                num_layers=2,  # [rltrading patch] was layer_num (TypeError upstream)
+                 activation=self.activation,
+                 group_size=world_model_cfg.group_size,
+                 final_norm_option_in_encoder=world_model_cfg.final_norm_option_in_encoder
+             )
+             # TODO: only for MemoryEnv now
+-            self.decoder_network = VectorDecoderForMemoryEnv(embedding_dim=world_model_cfg.embed_dim, output_shape=25)
++            self.decoder_network = VectorDecoderForMemoryEnv(embedding_dim=world_model_cfg.embed_dim, output_dim=observation_shape)  # [rltrading patch] kwarg name + real obs dim
+             self.tokenizer = Tokenizer(encoder=self.representation_network,
+                                        decoder=self.decoder_network, with_lpips=False, obs_type=world_model_cfg.obs_type)
+             self.world_model = self._build_world_model(world_model_cfg, self.tokenizer)
+@@ -154,8 +154,7 @@ class UniZeroModel(nn.Module):
+                 encoder_option=encoder_option,
+                 decoder_network_tokenizer=self.decoder_network_tokenizer,
+                 projection=projection,
+-                encoder_option=kwargs['encoder_option']
+-            )
++            )  # [rltrading patch] removed duplicated encoder_option kwarg (SyntaxError upstream)
+             self.world_model = self._build_world_model(world_model_cfg, self.tokenizer)
+ 
+ 

@@ -72,7 +72,7 @@ class TradingLightZeroEnv(BaseEnv):
         if done:
             info['eval_episode_return'] = self._ep_ret
             info['ticker'] = self._core.ticker
-        return BaseEnvTimestep(self._wrap(obs), np.array([rew], dtype=np.float32), done, info)
+        return BaseEnvTimestep(self._wrap(obs), float(rew), done, info)  # plain float: sampled_* buffers expect scalars
 
     def seed(self, seed, dynamic_seed=True):
         self._seed = int(seed)

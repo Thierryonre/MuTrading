@@ -75,7 +75,33 @@ See `results/baselines_finbert.csv`.
 
 The two sentiment rules flip between validation and test — an early warning that the sentiment signal is weak/unstable.
 
-### E1 — Does sentiment predict returns? (rank IC, FinBERT)
+### E1 — Does sentiment predict returns? (rank IC, FinBERT vs NOSIBLE LLM)
 
-See `results/sentiment_ic.md`. All |IC| < 0.05 at 1 day. Market sentiment was mildly *contrarian* in train and val
-(5-day IC ≈ −0.06/−0.08) but turned positive in test — consistent with E0.
+Full tables in `results/sentiment_ic.md`. Market features evaluated on SPY; asset features as daily cross-sectional IC.
+
+| Feature | FinBERT train / val / test (5-day IC) | NOSIBLE train / val / test (5-day IC) |
+|---|---|---|
+| `mkt_sent5` (5d market news sentiment) | −0.063 / −0.076 / −0.004 | −0.065 / −0.072 / +0.037 |
+| `mkt_sent20` | −0.063 / −0.090 / +0.033 | −0.058 / −0.105 / +0.043 |
+| `mkt_sent1` (1-day IC) | −0.011 / +0.002 / +0.044 | 0.000 / −0.058 / +0.075 |
+| `asset_sent5` (cross-sectional) | +0.007 / +0.040 / +0.010 | +0.004 / +0.022 / −0.004 |
+| `forum_sent5` (Reddit) | +0.022 / −0.056 / −0.025 | +0.040 / −0.128 / +0.015 |
+| `mkt_newsvol` (news volume) | −0.004 / −0.028 / +0.101 | same |
+
+Findings:
+* Signals are weak (|IC| ≲ 0.1) and **unstable**: market news sentiment was mildly *contrarian* in train and validation
+  (high sentiment → lower next-week returns) but turned *momentum-like* in the test period. Anything learned on 2010–2019
+  about sentiment is likely to hurt in 2019–2022.
+* The two models agree closely (daily correlation 0.78–0.86 across features). The newer NOSIBLE LLM gives slightly larger
+  magnitudes, but in the same unstable directions.
+* Reddit forum data is too sparse before 2017 (<1k posts/yr) to train on, and its sign flips too. **News beats forums
+  here** because it covers the whole period; forum features are tested only as an add-on ablation.
+
+### E2 — Model-free reference: PPO (stable-baselines3), 1M steps, seed 0
+
+| Run | Val Sharpe (selected ckpt) | Test Sharpe | Test CAGR | Test MaxDD | Avg position |
+|---|---|---|---|---|---|
+| PPO, no sentiment | see `results/runs/ppo_none_seed0` | 0.16 | 1.2% | −25.0% | +0.45 |
+| PPO + FinBERT sentiment | see `results/runs/ppo_finbert_seed0` | 0.43 | 5.6% | −17.1% | +0.40 |
+
+Both are below buy-and-hold (0.65).

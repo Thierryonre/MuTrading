@@ -1,6 +1,5 @@
 """Download daily OHLCV from Yahoo Finance (free, no key) and cache as parquet."""
 import pandas as pd
-import yfinance as yf
 
 from rltrading.config import CACHE_DIR, MARKET_TICKERS, PRICE_END, PRICE_START, UNIVERSE
 
@@ -12,6 +11,7 @@ def download_prices(tickers=None, start=PRICE_START, end=PRICE_END, force=False)
     path = CACHE_DIR / "prices.parquet"
     if path.exists() and not force:
         return pd.read_parquet(path)
+    import yfinance as yf  # lazy: not needed when prices are cached
     raw = yf.download(tickers, start=start, end=end, auto_adjust=True, group_by="ticker",
                       progress=False, threads=True)
     frames = []

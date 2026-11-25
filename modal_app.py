@@ -101,7 +101,7 @@ _LZ_DIR = _os.path.expanduser("~/rlt/LightZero")
 _CACHE = _os.path.expanduser("~/rlt/modal_data")
 
 train_image = (
-    modal.Image.debian_slim(python_version="3.10")
+    modal.Image.debian_slim(python_version="3.11")
     .apt_install("build-essential", "git")
     .pip_install("torch", index_url="https://download.pytorch.org/whl/cpu")
     .pip_install("DI-engine @ git+https://github.com/opendilab/DI-engine.git@ce54f6baa8d39d5b98adaf9a7e82560a444a2b1a")
@@ -135,6 +135,10 @@ def train_eval(argv: list[str]) -> dict:
     out_dir = C.RESULTS_DIR / "runs" / summary["name"]
     files = {os.path.relpath(p, C.RESULTS_DIR): open(p, "rb").read()
              for p in glob.glob(str(out_dir / "*"))}
+    for rel, b in files.items():  # also keep a copy on the volume in case the local client disconnects
+        dest = os.path.join("/vol/results", rel)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        open(dest, "wb").write(b)
     exp_vol.commit()
     return files
 

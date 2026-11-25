@@ -52,7 +52,7 @@ def build_cfg(a):
         model.update(proj_hid=256, proj_out=256, pred_hid=128, pred_out=256)
     if a.algo == "stochastic_muzero":
         model.update(chance_space_size=a.chance)
-        policy.update(use_ture_chance_label_in_chance_encoder=False)
+        policy.update(use_ture_chance_label_in_chance_encoder=False, optim_type="Adam")  # only Adam/SGD supported
     if a.algo == "gumbel_muzero":
         policy.update(max_num_considered_actions=n_act)
     if a.algo == "efficientzero":
@@ -118,6 +118,9 @@ def main(argv=None):
     torch.set_num_threads(a.threads)
     main_cfg, create_cfg = build_cfg(a)
     t0 = time.time()
+    os.makedirs(main_cfg.exp_name, exist_ok=True)
+    with open(os.path.join(main_cfg.exp_name, "run_args.json"), "w") as f:
+        json.dump({**vars(a), "wall_sec": None}, f, indent=1)  # rewritten at the end
     if a.algo == "unizero":
         from lzero.entry import train_unizero
         train_unizero([main_cfg, create_cfg], seed=a.seed, max_env_step=a.max_env_step)
