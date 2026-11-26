@@ -1,6 +1,8 @@
 run,algo,sentiment,seed,steps,ckpt,val_sharpe,test_sharpe,test_cagr,test_maxdd,test_turnover,test_avg_pos,test_mean_asset_sharpe,train_hours
 efficientzero_finbert_seed0,efficientzero,finbert,0,120000,iteration_30208.pth.tar,0.5957,-0.0866,-0.0188,-0.1857,28.4477,0.2252,-0.0416,1.1627
+efficientzero_none_long_seed0,efficientzero,none,0,120000,iteration_28000.pth.tar,0.5453,0.1316,0.0079,-0.1583,28.2080,0.2393,0.0284,2.5551
 efficientzero_none_seed0,efficientzero,none,0,120000,iteration_28000.pth.tar,0.4667,0.3425,0.0393,-0.2298,37.1579,0.2404,0.1245,1.1203
+gumbel_muzero_finbert_seed0,gumbel_muzero,finbert,0,120000,iteration_10000.pth.tar,0.1871,-1.0388,-0.0513,-0.1696,40.7766,0.1198,-0.2745,1.5999
 gumbel_muzero_none_seed0,gumbel_muzero,none,0,120000,iteration_0.pth.tar,-0.3637,-0.2475,-0.0744,-0.4916,5.1256,-0.9886,-0.1845,1.0389
 muzero_finbert_seed0,muzero,finbert,0,150000,iteration_22000.pth.tar,0.1898,-0.0727,-0.0071,-0.1339,31.0962,0.2014,-0.0534,2.6374
 muzero_none_seed0,muzero,none,0,150000,iteration_4000.pth.tar,0.6759,-0.2497,-0.0335,-0.2680,40.3314,0.4422,-0.1122,2.6374
@@ -11,4 +13,7 @@ sampled_muzero_finbert_seed0,sampled_muzero,finbert,0,120000,iteration_22000.pth
 sampled_muzero_none_seed0,sampled_muzero,none,0,120000,iteration_10000.pth.tar,-0.4860,-0.7223,-0.0599,-0.2053,40.7287,0.1421,-0.2573,1.9782
 stochastic_muzero_finbert_seed0,stochastic_muzero,finbert,0,120000,iteration_30208.pth.tar,0.5932,0.0156,-0.0063,-0.2205,28.0824,0.1782,-0.0086,1.4263
 stochastic_muzero_none_seed0,stochastic_muzero,none,0,120000,iteration_22000.pth.tar,-0.4749,-0.3664,-0.0390,-0.1896,36.1647,0.3342,-0.2010,1.8461
+stochastic_muzero_none_seed1,stochastic_muzero,none,1,120000,iteration_10000.pth.tar,0.1947,-0.3642,-0.0370,-0.2025,37.7743,0.2669,-0.1837,3.5075
+stochastic_muzero_nosible_long_seed0,stochastic_muzero,nosible,0,120000,iteration_14000.pth.tar,0.3154,1.1082,0.1324,-0.1222,25.1715,0.5954,0.5976,3.3177
 stochastic_muzero_nosible_seed0,stochastic_muzero,nosible,0,120000,iteration_28000.pth.tar,0.6016,0.2912,0.0323,-0.1908,29.4409,0.3827,0.1600,1.7926
+stochastic_muzero_nosible_seed1,stochastic_muzero,nosible,1,120000,iteration_28000.pth.tar,0.8395,0.1276,0.0076,-0.1232,28.0482,0.3359,0.0800,3.5723

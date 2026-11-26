@@ -122,6 +122,7 @@ Full table: `results/summary.md`; equity curves: `results/equity_curves_test.png
 | EfficientZero | none | 0.47 | 0.34 | 3.9% | −23.0% | 37 | 0.24 |
 | EfficientZero | FinBERT | 0.60 | −0.09 | −1.9% | −18.6% | 28 | 0.23 |
 | Gumbel MuZero | none | −0.36 | −0.25 | −7.4% | −49.2% | 5 | −0.99 |
+| Gumbel MuZero | FinBERT | 0.19 | −1.04 | −5.1% | −17.0% | 41 | 0.12 |
 | Stochastic MuZero | none | −0.47 | −0.37 | −3.9% | −19.0% | 36 | 0.33 |
 | Stochastic MuZero | FinBERT | 0.59 | 0.02 | −0.6% | −22.1% | 28 | 0.18 |
 | Stochastic MuZero | NOSIBLE | 0.60 | 0.29 | 3.2% | −19.1% | 29 | 0.38 |
@@ -144,3 +145,23 @@ Observations:
 * The planning advantage of MuZero relies on a learnable model of the environment. Here the agent's action never
   affects the next observation (except its own position), so the "dynamics" to learn are just the market's — essentially
   unpredictable noise — and the search mostly averages over noise.
+
+### E4 — Seed variance and long-only action space (local CPU, after Modal cancelled these jobs)
+
+| Run | Val Sharpe | **Test Sharpe** | Test CAGR | Test MaxDD | Turnover | Avg position |
+|---|---|---|---|---|---|---|
+| Stochastic MuZero, none, seed 0 / **seed 1** | −0.47 / 0.19 | −0.37 / **−0.36** | −3.9% / −3.7% | −19.0% / −20.2% | 36 / 38 | 0.33 / 0.27 |
+| Stochastic MuZero, NOSIBLE, seed 0 / **seed 1** | 0.60 / 0.84 | 0.29 / **0.13** | 3.2% / 0.8% | −19.1% / −12.3% | 29 / 28 | 0.38 / 0.34 |
+| EfficientZero, none, **long-only** {flat, long} | 0.55 | 0.13 | 0.8% | −15.8% | 28 | 0.24 |
+| **Stochastic MuZero, NOSIBLE, long-only** | 0.32 | **1.11** | **13.2%** | **−12.2%** | 25 | 0.60 |
+
+* Second seeds are consistent in sign with the first: no-sentiment Stochastic MuZero loses money on both seeds,
+  NOSIBLE-sentiment Stochastic MuZero is weakly positive on both (0.29, 0.13) — a small but repeatable sentiment effect,
+  still well below buy-and-hold.
+* **Stochastic MuZero + NOSIBLE + long-only is the first agent to beat buy-and-hold** on the test period
+  (Sharpe 1.11 vs 0.65, CAGR 13.2% vs 12.7%, max drawdown −12% vs −29%). Year by year it trailed in the up-years
+  (2019 +4% vs +13%, 2021 +22% vs +34%) but cut exposure in the COVID crash (average position 0.74 in Jan 2020 →
+  0.26 in Apr 2020) and in 2022 (+1% vs −15%). Its validation Sharpe was only 0.32, i.e. it was **not** the
+  configuration one would have picked from validation alone — treat this as a single lucky-or-not seed until the
+  robustness runs in E5 (more seeds + a no-sentiment control) are in.
+* Long-only did not help EfficientZero (0.34 → 0.13): it stayed mostly flat (avg position 0.24).

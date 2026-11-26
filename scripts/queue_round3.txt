@@ -1,0 +1,5 @@
+stochastic_muzero_nosible_long_s1 --algo stochastic_muzero --sentiment nosible --long_only --seed 1 --max_env_step 120000
+stochastic_muzero_none_long_s0 --algo stochastic_muzero --sentiment none --long_only --max_env_step 120000
+stochastic_muzero_nosible_long_s2 --algo stochastic_muzero --sentiment nosible --long_only --seed 2 --max_env_step 120000
+stochastic_muzero_finbert_long_s0 --algo stochastic_muzero --sentiment finbert --long_only --max_env_step 120000
+stochastic_muzero_none_long_s1 --algo stochastic_muzero --sentiment none --long_only --seed 1 --max_env_step 120000
