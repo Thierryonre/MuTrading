@@ -74,8 +74,8 @@ def load_policy(exp_dir, ckpt):
     a.collectors, a.evaluators = 1, 1
     main_cfg, create_cfg = build_cfg(a)
     if a.algo == "unizero":
-        main_cfg.policy.model.world_model_cfg.env_num = 64
-        main_cfg.policy.model.world_model_cfg.evaluator_env_num = 64
+        main_cfg.policy.model.world_model_cfg.env_num = 8
+        main_cfg.policy.model.world_model_cfg.evaluator_env_num = 8
     main_cfg.exp_name = "/tmp/bt_" + os.path.basename(exp_dir)
     cfg = compile_config(main_cfg, seed=0, env=None, auto=True, create_cfg=create_cfg, save_cfg=False)
     policy = create_policy(cfg.policy, model=None, enable_field=["learn", "collect", "eval"])
@@ -94,16 +94,25 @@ def agent_frames(policy, a, cfg, split):
                        long_only=a.long_only)
     n_act = 1 if continuous else len(positions)
     em = policy.eval_mode
-    em.reset(list(range(len(cores))))
+    # UniZero keeps per-env KV caches that grow over a 374-883 step episode: evaluate a few assets at a time
+    chunk = 5 if a.algo == "unizero" else len(cores)
+    frames = {}
+    for c0 in range(0, len(cores), chunk):
+        sub = cores[c0:c0 + chunk]
+        em.reset(list(range(len(sub))))
 
-    def act(obs, idx, step):
-        data = torch.from_numpy(obs).float()
-        mask = [np.ones(n_act, "int8") for _ in idx]
-        out = em.forward(data, action_mask=mask, to_play=[-1] * len(idx), ready_env_id=np.array(idx),
-                         timestep=[step] * len(idx))
-        return [out[i]["action"] for i in idx]
+        def act(obs, idx, step):
+            data = torch.from_numpy(obs).float()
+            mask = [np.ones(n_act, "int8") for _ in idx]
+            out = em.forward(data, action_mask=mask, to_play=[-1] * len(idx), ready_env_id=np.array(idx),
+                             timestep=[step] * len(idx))
+            return [out[i]["action"] for i in idx]
 
-    return run_cores(cores, act)
+        frames.update(run_cores(sub, act))
+        if a.algo == "unizero":
+            import gc
+            gc.collect()
+    return frames
 
 
 def list_ckpts(exp_dir):

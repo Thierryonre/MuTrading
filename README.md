@@ -3,7 +3,11 @@
 Can the MuZero family of model-based RL algorithms (via [LightZero](https://github.com/opendilab/LightZero))
 learn to trade daily US equities/ETFs, and does adding free news / forum sentiment help?
 
-**Status:** work in progress — see [Experiment log](#experiment-log) for every test and result.
+**Short answer: no.** Across 7 MuZero-family algorithms, 2 sentiment models, long/short and long-only action spaces
+and multiple seeds, no configuration *reliably* beat buy-and-hold on the 2019-07 → 2022-12 test period.
+One run (Stochastic MuZero + NOSIBLE LLM sentiment, long-only, seed 0) did — Sharpe 1.11 vs 0.65 — but the
+other two seeds of the same configuration scored 0.29 and −0.47 (E5). See [Conclusions](#conclusions) and the
+[Experiment log](#experiment-log) for every test and result.
 
 ## Setup in one paragraph
 
@@ -165,3 +169,72 @@ Observations:
   configuration one would have picked from validation alone — treat this as a single lucky-or-not seed until the
   robustness runs in E5 (more seeds + a no-sentiment control) are in.
 * Long-only did not help EfficientZero (0.34 → 0.13): it stayed mostly flat (avg position 0.24).
+
+### E5 — Is the long-only winner real? More seeds + controls (local CPU)
+
+| Run | Val Sharpe | **Test Sharpe** | Test CAGR | Test MaxDD | Turnover | Avg position |
+|---|---|---|---|---|---|---|
+| Stochastic MuZero, NOSIBLE, long-only, seed 0 | 0.32 | **1.11** | 13.2% | −12.2% | 25 | 0.60 |
+| Stochastic MuZero, NOSIBLE, long-only, seed 1 | 0.42 | 0.29 | 2.7% | −15.6% | 29 | 0.57 |
+| Stochastic MuZero, NOSIBLE, long-only, seed 2 | 0.62 | −0.47 | −1.5% | −8.4% | 15 | 0.07 |
+| Stochastic MuZero, no sentiment, long-only, seed 0 | 0.45 | 0.29 | 2.2% | −11.5% | 36 | 0.39 |
+| Stochastic MuZero, no sentiment, long-only, seed 1 | 0.52 | 0.35 | 4.0% | −20.2% | 31 | 0.53 |
+| Stochastic MuZero, FinBERT, long-only, seed 0 | 0.33 | 0.21 | 2.0% | −21.2% | 25 | 0.50 |
+
+**Seed ensembles** (average of the per-seed daily portfolio returns — no selection on test):
+
+| Ensemble | Test Sharpe | CAGR | MaxDD |
+|---|---|---|---|
+| NOSIBLE, long-only (3 seeds) | 0.62 | 4.8% | −10.1% |
+| No sentiment, long-only (2 seeds) | 0.35 | 3.2% | −13.0% |
+| NOSIBLE, long/short (2 seeds) | 0.25 | 2.1% | −13.7% |
+| No sentiment, long/short (2 seeds) | −0.41 | −3.7% | −17.6% |
+| *Buy & hold* | *0.65* | *12.7%* | *−29.4%* |
+
+* The 1.11 Sharpe of seed 0 **did not replicate** (seeds 1 and 2: 0.29, −0.47). Seed 2 learned to sit almost
+  entirely in cash. The validation Sharpe ranks the three seeds in *exactly the wrong order*, so there was no way to pick
+  seed 0 in advance.
+* Averaged over seeds, the ordering is consistent: **long-only > long/short, and NOSIBLE sentiment > no sentiment**
+  (by ≈0.3–0.6 Sharpe). The 3-seed NOSIBLE long-only ensemble roughly matches buy-and-hold's Sharpe (0.62 vs 0.65) with a
+  third of its drawdown, but with far lower returns (4.8% vs 12.7% a year) because it is only ~40% invested on average.
+  A risk-matched comparison (buy-and-hold scaled to the same volatility) would be about equal — i.e. no real edge.
+* The improvement from sentiment is mostly in 2020 and 2022, where cutting exposure helped; it is consistent with the
+  E1 finding that the news signal is weak and regime-dependent.
+
+## Conclusions
+
+1. **The MuZero family does not trade daily equities better than buy-and-hold here.** 7 algorithms × sentiment
+   options × action spaces, 25 assets, 3.5-year out-of-sample test including a crash, a rally and a bear market.
+   The best *robust* result (multi-seed average) is ≈ buy-and-hold's Sharpe at much lower return.
+2. **Why model-based planning does not help:** MuZero's strength is planning through a learnable model of how actions
+   change the world. In single-asset trading the agent's action only changes its own position; the rest of the "world
+   model" is next-day market returns, which are close to unpredictable. MCTS then mostly averages noise, and Gumbel /
+   Sampled variants add machinery without new information. Stochastic MuZero, which explicitly models chance, was the
+   most competitive MuZero variant, which fits this picture.
+3. **Sentiment:** free news sentiment (≈474k headlines + Reddit posts, no paid APIs) has small, unstable predictive power
+   (|IC| ≲ 0.1, sign flips between periods). The 2025 LLM classifier (NOSIBLE, Qwen3-0.6B) was slightly better than
+   FinBERT both in IC and as an RL input. Forum (Reddit) data is too sparse before 2017 to be useful for training.
+4. **Validation-based selection is unreliable** with an 18-month validation window: validation Sharpe was uncorrelated
+   (or anti-correlated) with test Sharpe across runs. Any single-run "winner" should be treated as noise until
+   replicated across seeds — this repo's own best run is an example.
+5. **Constraints help more than algorithms:** removing shorting and adding sentiment mattered more than the choice of
+   MuZero variant; a simple long-only SMA-200 trend rule (test Sharpe 0.91) beat every RL agent.
+
+Ideas not tried (would need more compute): many more assets for training (hundreds of stocks), cross-sectional
+(portfolio) action spaces, risk-adjusted reward (e.g. differential Sharpe), walk-forward retraining, and much longer
+validation periods / multi-seed checkpoint selection.
+
+## Engineering notes
+
+* **LightZero patches** (`patches/lightzero.patch`, applied to commit `003772de`):
+  three UniZero bugs for vector observations (duplicate kwarg, wrong kwarg names), a NumPy-2 scalar-conversion bug in
+  Gumbel MuZero, and a 2× faster python loop in the MuZero replay-buffer target computation.
+  The default 1024-wide self-supervised projection head was shrunk to 256 in configs — together ≈2.5× faster CPU
+  training.
+* **Look-ahead safeguards:** features use data up to the decision close only; news after 15:30 ET (or date-only items)
+  is shifted to the next session; normalisation statistics come from the training period; the test split was only
+  evaluated once per run with a checkpoint chosen on validation. Execution at the close that generated the signal
+  and log-return approximation for shorts are simplifications.
+* **Compute:** local 8-core CPU (WSL2) for most training; Modal for GPU sentiment scoring (2 × ~475k texts on T4s,
+  ≈$0.8) and parallel CPU training (≈$6 total). Several Modal jobs were cancelled by the platform and re-run locally.
+* **Data licences:** price data from Yahoo Finance; the news corpus is research/non-commercial only.
