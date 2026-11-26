@@ -2,7 +2,7 @@
 
 **Can MuZero-style reinforcement learning, plus free news/forum sentiment, trade stocks better than buy-and-hold?**
 
-**Short answer: no — not reliably.** One run did beat buy-and-hold, but it didn't hold up when repeated.
+**Short answer: no - not reliably.** One run did beat buy-and-hold, but it didn't hold up when repeated.
 
 > Full methodology, every experiment and all tables: **[EXPERIMENTS.md](EXPERIMENTS.md)**
 
@@ -15,7 +15,7 @@
 | **Algorithms** (via [LightZero](https://github.com/opendilab/LightZero)) | MuZero, EfficientZero, Gumbel MuZero, Stochastic MuZero, Sampled MuZero, UniZero (+ PPO as a non-MuZero comparison) |
 | **Sentiment** (no paid APIs) | ~474k free news headlines and Reddit posts, scored with **FinBERT** and **NOSIBLE** (a 2025 LLM-based classifier) |
 | **Assets** | 10 ETFs + 15 large-cap US stocks, daily bars |
-| **Train / validation / test** | 2010–2017 / 2018 – mid-2019 / **Jul 2019 – Dec 2022** (COVID crash, 2021 rally, 2022 bear market) |
+| **Train / validation / test** | 2010-2017 / 2018 - mid-2019 / **Jul 2019 - Dec 2022** (COVID crash, 2021 rally, 2022 bear market) |
 | **Variations** | with/without sentiment, long/short vs long-only, multiple random seeds |
 | **Costs** | 5 bps per trade |
 
@@ -30,11 +30,11 @@
 | UniZero + FinBERT | 0.41 |
 | EfficientZero | 0.34 |
 | UniZero, no sentiment | 0.09 |
-| All other MuZero-family runs | −1.04 to +0.35 |
+| All other MuZero-family runs | -1.04 to +0.35 |
 
 ## Key findings
 
-- **The one "winner" was luck.** Stochastic MuZero + NOSIBLE, long-only, seed 0 scored a Sharpe of **1.11** (13.2%/yr, −12% max drawdown vs buy-and-hold's −29%). Seeds 1 and 2 of the same setup scored **0.29** and **−0.47**. Averaged together it only matches buy-and-hold's Sharpe, at 4.8%/yr vs 12.7%, because it sits partly in cash.
+- **The one "winner" was luck.** Stochastic MuZero + NOSIBLE, long-only, seed 0 scored a Sharpe of **1.11** (13.2%/yr, -12% max drawdown vs buy-and-hold's -29%). Seeds 1 and 2 of the same setup scored **0.29** and **-0.47**. Averaged together it only matches buy-and-hold's Sharpe, at 4.8%/yr vs 12.7%, because it sits partly in cash.
 - **Validation scores don't predict test results.** UniZero had the best validation score of any run (1.14) and then scored 0.09 on test. With 18 months of validation data, picking the "best" run is mostly picking noise.
 - **MuZero-style planning doesn't help here.** MuZero shines when your actions change the world it is modelling. In trading, your action only changes your own position; the rest is next-day price moves, which are close to unpredictable.
 - **News helps slightly; forums don't.** The sentiment signal is weak and flips direction between periods. NOSIBLE beat FinBERT by a small, repeatable margin. Reddit data is too sparse before 2017 to train on, so news was used instead.
@@ -42,16 +42,11 @@
 
 ## Potential improvements
 
-**Experiments worth trying**
 - Train on hundreds of stocks instead of 25 (more data, less overfitting).
 - Let the agent trade a whole portfolio at once rather than one asset at a time.
 - Reward risk-adjusted returns (e.g. differential Sharpe) rather than raw returns.
 - Retrain periodically as time moves forward (walk-forward) instead of training once.
 - Use a much longer validation period and select checkpoints across several seeds.
-
-**Housekeeping**
-- Delete leftover checkpoints on the Modal volume `rltrading-exp` (2.3 GB, ~$0.21/month).
-- Delete local WSL data in `~/rlt` (~5 GB: raw news data and checkpoints).
 
 ## Project layout
 
