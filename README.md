@@ -105,3 +105,41 @@ Findings:
 | PPO + FinBERT sentiment | see `results/runs/ppo_finbert_seed0` | 0.43 | 5.6% | −17.1% | +0.40 |
 
 Both are below buy-and-hold (0.65).
+
+### E3 — MuZero family sweep, seed 0 (LightZero, 120k env steps ≈ 30k gradient steps; MuZero pilots 150k)
+
+Common settings: MLP world model (latent 128), 25 MCTS simulations, γ = 0.95, td_steps 5, replay ratio 0.25, batch 256,
+SSL head shrunk to 256 wide (see *Engineering notes*). Discrete actions {short, flat, long}; Sampled MuZero uses a continuous
+position in [−1, 1] with K = 10 sampled actions. Checkpoint chosen by validation Sharpe among ≤ 8 evenly spaced checkpoints.
+Full table: `results/summary.md`; equity curves: `results/equity_curves_test.png`.
+
+| Algorithm | Sentiment | Val Sharpe | **Test Sharpe** | Test CAGR | Test MaxDD | Turnover (×/yr) | Avg position |
+|---|---|---|---|---|---|---|---|
+| *Buy & hold* | – | 0.69 | **0.65** | 12.7% | −29.4% | 0.3 | 1.00 |
+| MuZero | none | 0.68 | −0.25 | −3.3% | −26.8% | 40 | 0.44 |
+| MuZero | FinBERT | 0.19 | −0.07 | −0.7% | −13.4% | 31 | 0.20 |
+| EfficientZero | none | 0.47 | 0.34 | 3.9% | −23.0% | 37 | 0.24 |
+| EfficientZero | FinBERT | 0.60 | −0.09 | −1.9% | −18.6% | 28 | 0.23 |
+| Gumbel MuZero | none | −0.36 | −0.25 | −7.4% | −49.2% | 5 | −0.99 |
+| Stochastic MuZero | none | −0.47 | −0.37 | −3.9% | −19.0% | 36 | 0.33 |
+| Stochastic MuZero | FinBERT | 0.59 | 0.02 | −0.6% | −22.1% | 28 | 0.18 |
+| Stochastic MuZero | NOSIBLE | 0.60 | 0.29 | 3.2% | −19.1% | 29 | 0.38 |
+| Sampled MuZero | none | −0.49 | −0.72 | −6.0% | −20.5% | 41 | 0.14 |
+| Sampled MuZero | FinBERT | −0.46 | 0.07 | 0.2% | −16.3% | 36 | 0.14 |
+| PPO (E2) | none / FinBERT | 0.21 / 1.79 | 0.16 / 0.43 | 1.2% / 5.6% | −25.0% / −17.1% | 68 / 76 | 0.45 / 0.40 |
+
+Observations:
+* **No MuZero variant beats buy-and-hold** on the test period; the best (EfficientZero without sentiment 0.34,
+  Stochastic MuZero + NOSIBLE 0.29) roughly halve the benchmark's Sharpe with lower drawdowns, mostly because they hold
+  a partial long position (avg ≈ 0.25–0.4) while trading ~30–40 times a year.
+* **Validation Sharpe does not predict test Sharpe** (e.g. MuZero none: 0.68 → −0.25). The validation window
+  (18 months) is short and checkpoint selection on it is largely noise-fitting.
+* Sentiment helped 4 of 5 algorithm pairs on test (MuZero, Stochastic, Sampled, PPO) but hurt EfficientZero; with one
+  seed each and Sharpe standard errors of ≈ ±0.5 over 3.5 years, none of these differences is statistically meaningful.
+* **Gumbel MuZero failed to learn** a useful policy here: every trained checkpoint was worse on validation than the random
+  initialisation (val Sharpe −0.4 to −2.1), so the untrained net (≈ always short) was selected. With only 3 actions the
+  Gumbel top-k machinery gives little advantage and its policy targets appear to collapse.
+* **Sampled MuZero** (continuous sizing) was the weakest and the most expensive (≈2× compute of discrete MuZero).
+* The planning advantage of MuZero relies on a learnable model of the environment. Here the agent's action never
+  affects the next observation (except its own position), so the "dynamics" to learn are just the market's — essentially
+  unpredictable noise — and the search mostly averages over noise.
