@@ -71,7 +71,7 @@ def load_policy(exp_dir, ckpt):
     for k, v in args.items():
         if hasattr(a, k):
             setattr(a, k, v)
-    a.collectors, a.evaluators = 1, 1
+    a.collectors, a.evaluators = (5, 5) if a.algo == "unizero" else (1, 1)  # unizero eval buffers sized by env count
     main_cfg, create_cfg = build_cfg(a)
     if a.algo == "unizero":
         main_cfg.policy.model.world_model_cfg.env_num = 8
@@ -106,6 +106,8 @@ def agent_frames(policy, a, cfg, split):
             mask = [np.ones(n_act, "int8") for _ in idx]
             out = em.forward(data, action_mask=mask, to_play=[-1] * len(idx), ready_env_id=np.array(idx),
                              timestep=[step] * len(idx))
+            if a.algo == "unizero":
+                _trim_unizero_caches(policy, full=(step % 50 == 49))
             return [out[i]["action"] for i in idx]
 
         frames.update(run_cores(sub, act))
@@ -113,6 +115,22 @@ def agent_frames(policy, a, cfg, split):
             import gc
             gc.collect()
     return frames
+
+
+def _trim_unizero_caches(policy, full=False):
+    """UniZero's MCTS KV caches are only trimmed by the LightZero evaluator; do the same here to bound memory.
+    Recurrent (search) caches are scratch space each step; root caches are reset every 50 steps
+    (mirrors the evaluator's periodic reset)."""
+    wm = policy._eval_model.world_model
+    if getattr(wm, "use_new_cache_manager", False):
+        wm.kv_cache_manager.clear_recur_cache()
+    else:
+        wm.past_kv_cache_recurrent_infer.clear()
+    if hasattr(wm, "past_token_context_recurrent_infer"):
+        wm.past_token_context_recurrent_infer.clear()
+    wm.keys_values_wm_list.clear()
+    if full:
+        wm.clear_caches()
 
 
 def list_ckpts(exp_dir):
