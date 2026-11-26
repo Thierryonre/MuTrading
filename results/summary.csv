@@ -4,6 +4,7 @@ efficientzero_none_seed0,efficientzero,none,0,120000,iteration_28000.pth.tar,0.4
 gumbel_muzero_none_seed0,gumbel_muzero,none,0,120000,iteration_0.pth.tar,-0.3637,-0.2475,-0.0744,-0.4916,5.1256,-0.9886,-0.1845,1.0389
 muzero_finbert_seed0,muzero,finbert,0,150000,iteration_22000.pth.tar,0.1898,-0.0727,-0.0071,-0.1339,31.0962,0.2014,-0.0534,2.6374
 muzero_none_seed0,muzero,none,0,150000,iteration_4000.pth.tar,0.6759,-0.2497,-0.0335,-0.2680,40.3314,0.4422,-0.1122,2.6374
+muzero_nosible_seed0,muzero,nosible,0,120000,iteration_22000.pth.tar,-0.3157,-0.0290,-0.0048,-0.0939,33.6419,0.2291,-0.0288,2.3258
 ppo_finbert_seed0,ppo,finbert,0,1000000,eval5,1.7925,0.4309,0.0560,-0.1715,75.5144,0.3991,0.2653,0.0000
 ppo_none_seed0,ppo,none,0,1000000,eval1,0.2141,0.1589,0.0124,-0.2499,67.7632,0.4546,0.1344,0.0000
 sampled_muzero_finbert_seed0,sampled_muzero,finbert,0,120000,iteration_22000.pth.tar,-0.4612,0.0675,0.0015,-0.1627,35.8657,0.1443,0.0064,1.9402

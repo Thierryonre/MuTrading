@@ -118,6 +118,7 @@ Full table: `results/summary.md`; equity curves: `results/equity_curves_test.png
 | *Buy & hold* | – | 0.69 | **0.65** | 12.7% | −29.4% | 0.3 | 1.00 |
 | MuZero | none | 0.68 | −0.25 | −3.3% | −26.8% | 40 | 0.44 |
 | MuZero | FinBERT | 0.19 | −0.07 | −0.7% | −13.4% | 31 | 0.20 |
+| MuZero | NOSIBLE | -0.32 | -0.03 | -0.5% | -9.4% | 34 | 0.23 |
 | EfficientZero | none | 0.47 | 0.34 | 3.9% | −23.0% | 37 | 0.24 |
 | EfficientZero | FinBERT | 0.60 | −0.09 | −1.9% | −18.6% | 28 | 0.23 |
 | Gumbel MuZero | none | −0.36 | −0.25 | −7.4% | −49.2% | 5 | −0.99 |
