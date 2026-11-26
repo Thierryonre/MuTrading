@@ -7,7 +7,7 @@ import io
 
 import modal
 
-app = modal.App("rltrading")
+app = modal.App("mutrading")
 
 score_image = (
     modal.Image.debian_slim(python_version="3.11")
