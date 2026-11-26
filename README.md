@@ -132,6 +132,8 @@ Full table: `results/summary.md`; equity curves: `results/equity_curves_test.png
 | Stochastic MuZero | NOSIBLE | 0.60 | 0.29 | 3.2% | −19.1% | 29 | 0.38 |
 | Sampled MuZero | none | −0.49 | −0.72 | −6.0% | −20.5% | 41 | 0.14 |
 | Sampled MuZero | FinBERT | −0.46 | 0.07 | 0.2% | −16.3% | 36 | 0.14 |
+| UniZero (transformer world model) | none | 1.14 | 0.09 | 0.0% | −27.3% | 28 | 0.66 |
+| UniZero | FinBERT | 0.85 | 0.41 | 6.3% | −28.3% | 26 | 0.72 |
 | PPO (E2) | none / FinBERT | 0.21 / 1.79 | 0.16 / 0.43 | 1.2% / 5.6% | −25.0% / −17.1% | 68 / 76 | 0.45 / 0.40 |
 
 Observations:
@@ -145,6 +147,7 @@ Observations:
 * **Gumbel MuZero failed to learn** a useful policy here: every trained checkpoint was worse on validation than the random
   initialisation (val Sharpe −0.4 to −2.1), so the untrained net (≈ always short) was selected. With only 3 actions the
   Gumbel top-k machinery gives little advantage and its policy targets appear to collapse.
+* **UniZero** (run locally, finished last) had the *highest validation Sharpe of any run* (1.14, above buy-and-hold's 0.69) and then scored 0.09 on test — the clearest example of validation over-fitting in this study. With FinBERT it reached 0.41, mostly by staying ~70% long.
 * **Sampled MuZero** (continuous sizing) was the weakest and the most expensive (≈2× compute of discrete MuZero).
 * The planning advantage of MuZero relies on a learnable model of the environment. Here the agent's action never
   affects the next observation (except its own position), so the "dynamics" to learn are just the market's — essentially

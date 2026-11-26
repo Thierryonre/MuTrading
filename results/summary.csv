@@ -22,3 +22,5 @@ stochastic_muzero_nosible_seed0,stochastic_muzero,nosible,0,120000,iteration_280
 stochastic_muzero_nosible_long_seed1,stochastic_muzero,nosible,1,120000,iteration_4000.pth.tar,0.4216,0.2859,0.0275,-0.1558,29.4409,0.5655,0.1593,2.7882
 stochastic_muzero_nosible_seed1,stochastic_muzero,nosible,1,120000,iteration_28000.pth.tar,0.8395,0.1276,0.0076,-0.1232,28.0482,0.3359,0.0800,3.5723
 stochastic_muzero_nosible_long_seed2,stochastic_muzero,nosible,2,120000,iteration_0.pth.tar,0.6165,-0.4718,-0.0151,-0.0844,15.2399,0.0685,-0.2244,2.8614
+unizero_finbert_seed0,unizero,finbert,0,120000,iteration_30208.pth.tar,0.8468,0.4144,0.0633,-0.2826,26.4614,0.7215,0.2447,4.5878
+unizero_none_seed0,unizero,none,0,120000,iteration_30208.pth.tar,1.1430,0.0930,0.0002,-0.2733,28.4706,0.6603,0.0677,4.5518
